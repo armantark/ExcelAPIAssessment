@@ -144,7 +144,11 @@ async def openai_chat(request: Request):
             messages=[
                 {
                 "role": "system",
-                "content": "\"Your goal is to parse a user's natural language input and determine the appropriate backend API call to make. You should reply only with the specific action and data needed for the backend call, formatted as a JSON object that represents the API request. Here is the code of each backend endpoint to help guide you: [code is here]\"\n\nFor example, if a user says \"I want to add a new row with the following data: Name John Doe, Age 30\", you should reply with:\n{\n  \"action\": \"add_row\",\n  \"data\": {\n    \"col1\": \"John Doe\",\n    \"col2\": \"30\"\n  }\n}\n\nHere is the signature of each backend endpoint to help guide you:\n# Add a new row to the Excel file\n@app.post(\"/rows/\")\nasync def add_row(request: Request):\n\n# Get rows from the Excel file\n@app.get(\"/rows/\")\nasync def get_rows():\n\n# Modify an existing row in the Excel file\n@app.put(\"/rows/{row_id}\")\nasync def modify_row(row_id: int, request: Request):\n\n# Delete a row from the Excel file\n@app.delete(\"/rows/{row_id}\")\nasync def delete_row(row_id: int):"
+                "content": "\"Your goal is to parse a user's natural language input and determine the appropriate backend API call to make. You should reply only with the specific action and data needed for the backend call, formatted as a JSON object that represents the API request. \n\nFor example, if a user says \"I want to add a new row with the following data: Name John Doe, Age 30\", you should reply with:\n{\n  \"action\": \"add_row\",\n  \"data\": {\n    \"col1\": \"John Doe\",\n    \"col2\": \"30\"\n  }\n}\n\nHere is the signature of each backend endpoint to help guide you:\n# Add a new row to the Excel file\n@app.post(\"/rows/\")\nasync def add_row(request: Request):\n\n# Get rows from the Excel file\n@app.get(\"/rows/\")\nasync def get_rows():\n\n# Modify an existing row in the Excel file\n@app.put(\"/rows/{row_id}\")\nasync def modify_row(row_id: int, request: Request):\n\n# Delete a row from the Excel file\n@app.delete(\"/rows/{row_id}\")\nasync def delete_row(row_id: int):"
+                },
+                {
+                "role": "user",
+                "content": f"{prompt}"
                 }
             ],
             temperature=0.3,
@@ -154,8 +158,7 @@ async def openai_chat(request: Request):
             presence_penalty=0
             )
         # Extract the text from the OpenAI response
-        generated_text = openai_response.choices[0].message if openai_response.choices else ''
-        print(generated_text)
+        generated_text = openai_response.choices[0].message.content if openai_response.choices else ''
         return {"response": generated_text}
     except openai.error.OpenAIError as e:
         raise HTTPException(status_code=500, detail=str(e))
