@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Excel API Chatbot</title>
+</head>
+<body>
+    <h1>Excel API Chatbot Interface</h1>
+    <div id="chatbox">
+        <p id="chatlog"></p>
+    </div>
+    <input type="text" id="userinput" placeholder="Type your message here...">
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        async function sendMessage() {
+            const inputField = document.getElementById('userinput');
+            const userText = inputField.value.trim();
+            inputField.value = '';
+            if (userText) {
+                displayMessage(userText, 'You');
+                const openAIResponse = await getOpenAIResponse(userText);
+                if (openAIResponse) {
+                    const action = interpretOpenAIResponse(openAIResponse);
+                    if (action && action.action) {
+                        const apiResponse = await performAction(action);
+                        displayMessage(apiResponse.message, 'Bot');
+                    } else {
+                        displayMessage("I'm not sure how to handle that.", 'Bot');
+                    }
+                } else {
+                    displayMessage("There was an error processing your request.", 'Bot');
+                }
+            }
+        }
+
+        function displayMessage(message, sender) {
+            const chatLog = document.getElementById('chatlog');
+            chatLog.innerHTML += `<p><strong>${sender}:</strong> ${message}</p>`;
+            chatLog.scrollTop = chatLog.scrollHeight; // Auto-scroll to the latest message
+        }
+
+        async function getOpenAIResponse(message) {
+            try {
+                const response = await fetch('http://localhost:5173/openai_chat/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ prompt: message })
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                return data.response;
+            } catch (error) {
+                console.error('Error fetching OpenAI response:', error);
+            }
+        }
+
+        function interpretOpenAIResponse(response) {
+            try {
+                return JSON.parse(response);
+            } catch (error) {
+                console.error('Error parsing OpenAI response:', error);
+            }
+        }
+
+        async function performAction(action) {
+            try {
+                const response = await fetch(`/rows/${action.action === 'delete_row' ? action.data : ''}`, {
+                    method: action.action === 'add_row' ? 'POST' :
+                           action.action === 'get_rows' ? 'GET' :
+                           action.action === 'modify_row' ? 'PUT' :
+                           action.action === 'delete_row' ? 'DELETE' : 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: action.action !== 'get_rows' && action.action !== 'delete_row' ? JSON.stringify(action.data) : null
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error performing action:', error);
+                return { message: "Error performing action on the backend." };
+            }
+        }
+    </script>
+</body>
+</html>
