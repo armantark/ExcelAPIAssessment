@@ -69,7 +69,7 @@
 
         async function performAction(action) {
             try {
-                const response = await fetch(`/rows/${action.action === 'delete_row' ? action.data : ''}`, {
+                const response = await fetch(`http://localhost:8000/rows/${action.action === 'delete_row' ? action.data : ''}`, {
                     method: action.action === 'add_row' ? 'POST' :
                            action.action === 'get_rows' ? 'GET' :
                            action.action === 'modify_row' ? 'PUT' :
