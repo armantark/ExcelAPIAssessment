@@ -21,3 +21,5 @@ uvicorn==0.29.0
 pytest
 requests
 httpx
+openpyxl
+openai
